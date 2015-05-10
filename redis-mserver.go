@@ -1,11 +1,13 @@
 package main
 
-// todo: pipeline
 // todo: configuration format
+// todo: switch to jin rest api
+// todo: port configuration
+// todo: api metrics reporting to statsd
+// todo: service check
 
 import (
 	"flag"
-	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/go-martini/martini"
 	"github.com/martini-contrib/render"
@@ -49,12 +51,12 @@ func main() {
 
 		_, err := c.Do("HSET", key, "value", value)
 		if err != nil {
-			r.JSON(400, map[string]interface{}{"error": err})
+			r.JSON(400, map[string]interface{}{"error": err.Error()})
 			return
 		}
 
 		if _, err := c.Do("HINCRBY", key, tkey, 1); err != nil {
-			r.JSON(400, map[string]interface{}{"error": err})
+			r.JSON(400, map[string]interface{}{"error": err.Error()})
 			return
 		}
 
@@ -96,14 +98,14 @@ func main() {
 		defer c.Close()
 		values, err := redis.Values(c.Do("HMGET", keys...))
 		if err != nil {
-			r.JSON(400, map[string]interface{}{"error": err})
+			r.JSON(400, map[string]interface{}{"error": err.Error()})
 			return
 		}
 
 		// scan the []interface{} slice into a []int slice
 		var ints []int
 		if err = redis.ScanSlice(values, &ints); err != nil {
-			r.JSON(400, map[string]interface{}{"error": err})
+			r.JSON(400, map[string]interface{}{"error": err.Error()})
 			return
 		}
 
@@ -127,7 +129,6 @@ func main() {
 			r.JSON(400, map[string]interface{}{"error": err.Error()})
 			return
 		}
-		fmt.Println(err)
 		r.JSON(200, map[string]interface{}{"value": value})
 
 	})
